@@ -73,18 +73,15 @@ def main():
     decrypted_message_n2 = decrypt(encrypted_message_n2, private_key)
     print(f'(3) N2 Decrypted message (using private key B): {decrypted_message_n2}\n')
 
-    print('(4) Session Key (enter 16-bits message):')
-
-    session_key = int(input("Enter the 16-bit session key: "))
-    
-    # Split the 16-bit session key into 8 2-bit chunks
-    session_key_chunks = [(session_key >> i) & 0b11 for i in range(14, -1, -2)]
-
     # Encrypt and send each 2-bit chunk to A.py
     print('(4) Sending Session Key...')
-    print(f'Session Key\t: {session_key}')
+    session_key = '1234567890987654'
+    
+    session_key_chunks = [session_key[i:i+2] for i in range(0, len(session_key), 2)]
+
+    print(f'Session Key\t: {session_key_chunks}')
     for chunk in session_key_chunks:
-        encrypted_chunk = encrypt(chunk, client_public_key)
+        encrypted_chunk = encrypt(int(chunk), client_public_key)
         print(f'sending\t\t: {chunk}')
         print(f'encrypted\t: {encrypted_chunk}\n')
         client_socket.send(str(encrypted_chunk).encode())

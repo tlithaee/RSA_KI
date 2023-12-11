@@ -66,7 +66,7 @@ def main():
 
         session_key_chunks = []
         print('(4) Receiving Session Key...')
-        for _ in range(8):  # Receive 8 chunks to reconstruct 16 bits
+        for _ in range(8): 
             encrypted_chunk = int(client_socket.recv(1024).decode())
             decrypted_chunk = decrypt(encrypted_chunk, private_key)
             session_key_chunks.append(decrypted_chunk)
@@ -74,8 +74,9 @@ def main():
             print(f'received\t: {encrypted_chunk}')
             print(f'decrypted\t: {decrypted_chunk}\n')
 
-        reconstructed_session_key = sum((chunk << (i * 2)) for i, chunk in enumerate(session_key_chunks[::-1]))
-        print(f'(5) Decrypted Session Key (using private key A): {reconstructed_session_key:016b}')
+        # Combine decrypted chunks to form the session key
+        session_key = ''.join(map(str, session_key_chunks))
+        print(f'(5) Combined Session Key: {session_key}\n')
 
     client_socket.close()
 
