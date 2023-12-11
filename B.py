@@ -1,5 +1,6 @@
 import socket
 import math
+import time
 
 def generate_rsa_keys():
     # RSA key generation code (same as provided)
@@ -53,7 +54,7 @@ def main():
     # Receive client's public key from the client
     client_public_key = eval(client_socket.recv(1024).decode())
     print(f"Received client's public key: {client_public_key}\n")
-    
+
     # Receive encrypted N1 message from client
     encrypted_message_n1 = int(client_socket.recv(1024).decode())
     print(f'(1) N1 Encrypted message: {encrypted_message_n1}')
@@ -68,7 +69,7 @@ def main():
     # Encrypt N2 using the client's public key
     encrypted_message_n2 = encrypt(message_n2, client_public_key)
     print(f'Encrypted message (using PUB A): {encrypted_message_n2}')
-    
+
     # Send encrypted N2 message back to clientA.py
     client_socket.send(str(encrypted_message_n2).encode())
     print('(2) N2 sent ...\n')
@@ -78,11 +79,29 @@ def main():
     decrypted_message_n2 = decrypt(encrypted_message_n2, private_key)
     print(f'(3) N2 Decrypted message (using private key B): {decrypted_message_n2}\n')
 
-    print('Session Key (enter 16-bits message): ')
+    print('(4) Session Key (enter 16-bits message):')
+
+    # Get the 16-bit session key from the user
+    session_key = int(input("Enter the 16-bit session key: "))
+    
+    # Split the 16-bit session key into 8 2-bit chunks
+    session_key_chunks = [(session_key >> i) & 0b11 for i in range(14, -1, -2)]
+
+    # Encrypt and send each 2-bit chunk to A.py
+    print('(4) Sending Session Key...')
+    print(f'Session Key\t: {session_key}')
+    for chunk in session_key_chunks:
+        encrypted_chunk = encrypt(chunk, client_public_key)
+        print(f'sending\t\t: {chunk}')
+        print(f'encrypted\t: {encrypted_chunk}\n')
+        client_socket.send(str(encrypted_chunk).encode())
+        time.sleep(0.5)
+    
+    print('(5) Session Key sent ...\n')
 
     # Close the connection
     client_socket.close()
     server_socket.close()
-    
+
 if __name__ == "__main__":
     main()
