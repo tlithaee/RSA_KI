@@ -3,8 +3,8 @@ import math
 
 def generate_rsa_keys():
     # RSA key generation code (same as provided)
-    p = 13
-    q = 17
+    p = 11
+    q = 13
     n = p * q
     phi = (p - 1) * (q - 1)
     e = 2
@@ -51,27 +51,23 @@ def main():
     # Get user input
     message_n1 = int(input("Enter N1 message to send: "))
 
-    # Encrypt and send message
+    # Encrypt and send N1 using server's public key
     encrypted_message_n1 = encrypt(message_n1, server_public_key)
     print(f'Encrypted message (using PUB B): {encrypted_message_n1}')
     client_socket.send(str(encrypted_message_n1).encode())
 
-    print('(1) N1 || ID_A sent ...\n')
+    print('(1) N1 sent ...\n')
 
-     # Receive and decrypt message (N1)
-    received_message_n1 = int(client_socket.recv(1024).decode())
-    decrypted_message_n1 = decrypt(received_message_n1, private_key)
-    print(f'(2) N1 Decrypted message (using private key A): {decrypted_message_n1}')
+    # Receive and decrypt N2 using client's private key
+    encrypted_message_n2 = int(client_socket.recv(1024).decode())
+    decrypted_message_n2 = decrypt(encrypted_message_n2, private_key)
+    print(f'(2) N2 Decrypted message (using private key A): {decrypted_message_n2}')
 
-    # Receive and decrypt message (N2)
-    received_message_n2 = int(client_socket.recv(1024).decode())
-    decrypted_message_n2 = decrypt(received_message_n2, private_key)
-    print(f'N2 Decrypted message (using private key A): {decrypted_message_n2}\n')
-
-    # Send the decrypted N2 message back to server (clientB.py)
+    # Send the decrypted N2 message back to the server (clientB.py)
     encrypted_message_n2 = encrypt(decrypted_message_n2, server_public_key)
+    print(f'Encrypted message (using PUB B): {encrypted_message_n2}')
     client_socket.send(str(encrypted_message_n2).encode())
-    print('(3) N2 sent ...\n')
+    print('\n(3) N2 sent ...\n')
 
     # Close the connection
     client_socket.close()
