@@ -3,7 +3,6 @@ import math
 import time
 
 def generate_rsa_keys():
-    # RSA key generation code (same as provided)
     p = 17
     q = 19
     n = p * q
@@ -14,28 +13,24 @@ def generate_rsa_keys():
             break
         else:
             e += 1
-    d = pow(e, -1, phi)  # Fix: use modular inverse to calculate d
+    d = pow(e, -1, phi) 
     public_key = (e, n)
     private_key = (d, n)
     return public_key, private_key
 
 def encrypt(message, public_key):
-    # RSA encryption code with modulo parameter
     e, n = public_key
     C = pow(message, e, n)
     return C
 
 def decrypt(ciphertext, private_key):
-    # RSA decryption code with modulo parameter
     d, n = private_key
     M = pow(ciphertext, d, n)
     return M
 
 def main():
-    # Generate RSA keys
     public_key, private_key = generate_rsa_keys()
 
-    # Set up socket connection
     server_address = ('localhost', 12345)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(server_address)
@@ -63,7 +58,6 @@ def main():
     decrypted_message_n1 = decrypt(encrypted_message_n1, private_key)
     print(f'N1 Decrypted message (using private key B): {decrypted_message_n1}\n')
 
-    # Get user input for N2
     message_n2 = int(input("Enter N2 message to send: "))
 
     # Encrypt N2 using the client's public key
@@ -81,7 +75,6 @@ def main():
 
     print('(4) Session Key (enter 16-bits message):')
 
-    # Get the 16-bit session key from the user
     session_key = int(input("Enter the 16-bit session key: "))
     
     # Split the 16-bit session key into 8 2-bit chunks
@@ -99,7 +92,6 @@ def main():
     
     print('(5) Session Key sent ...\n')
 
-    # Close the connection
     client_socket.close()
     server_socket.close()
 
