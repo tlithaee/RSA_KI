@@ -1,34 +1,3 @@
-import socket
-import math
-
-# RSA
-def generate_rsa_keys():
-    p = 11
-    q = 13
-    n = p * q
-    phi = (p - 1) * (q - 1)
-    e = 2
-    while e < phi:
-        if math.gcd(e, phi) == 1:
-            break
-        else:
-            e += 1
-    d = pow(e, -1, phi) 
-    public_key = (e, n)
-    private_key = (d, n)
-    return public_key, private_key
-
-def encryptRSA(message, public_key):
-    e, n = public_key
-    C = pow(message, e, n)
-    return C
-
-def decryptRSA(ciphertext, private_key):
-    d, n = private_key
-    M = pow(ciphertext, d, n)
-    return M
-
-# DSA
 # Hexadecimal to binary conversion
 def hex2bin(s):
 	mp = {'0': "0000",
@@ -211,6 +180,7 @@ final_perm = [40, 8, 48, 16, 56, 24, 64, 32,
 			34, 2, 42, 10, 50, 18, 58, 26,
 			33, 1, 41, 9, 49, 17, 57, 25]
 
+
 def encrypt(pt, rkb, rk):
 	pt = hex2bin(pt)
 
@@ -247,8 +217,8 @@ def encrypt(pt, rkb, rk):
 		# Swapper
 		if(i != 15):
 			left, right = right, left
-		# print("Round ", i + 1, " ", bin2hex(left),
-		# 	" ", bin2hex(right), " ", rk[i])
+		print("Round ", i + 1, " ", bin2hex(left),
+			" ", bin2hex(right), " ", rk[i])
 
 	# Combination
 	combine = left + right
@@ -257,123 +227,69 @@ def encrypt(pt, rkb, rk):
 	cipher_text = permute(combine, final_perm, 64)
 	return cipher_text
 
-pt = "123456ABCD132578"
+pt = "123456ABCD132536"
+key = "AABB09182736CCDD"
 
-def main():
-    server_address = ('localhost', 12345)
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect(server_address)
+# Key generation
+# --hex to binary
+key = hex2bin(key)
 
-    public_key, private_key = generate_rsa_keys()
-    print(f'Public key: {public_key}')
-    print(f'Private key: {private_key}\n')
+# --parity bit drop table
+keyp = [57, 49, 41, 33, 25, 17, 9,
+		1, 58, 50, 42, 34, 26, 18,
+		10, 2, 59, 51, 43, 35, 27,
+		19, 11, 3, 60, 52, 44, 36,
+		63, 55, 47, 39, 31, 23, 15,
+		7, 62, 54, 46, 38, 30, 22,
+		14, 6, 61, 53, 45, 37, 29,
+		21, 13, 5, 28, 20, 12, 4]
 
-    # Send public key to server
-    client_socket.send(str(public_key).encode())
+# getting 56 bit key from 64 bit using the parity bits
+key = permute(key, keyp, 56)
 
-    # Receive server's public key
-    server_public_key = eval(client_socket.recv(1024).decode())
-    print(f"Received server's public key: {server_public_key}\n")
+# Number of bit shifts
+shift_table = [1, 1, 2, 2,
+			2, 2, 2, 2,
+			1, 2, 2, 2,
+			2, 2, 2, 1]
 
-    message_n1 = int(input("Enter N1 message to send:"))
+# Key- Compression Table : Compression of key from 56 bits to 48 bits
+key_comp = [14, 17, 11, 24, 1, 5,
+			3, 28, 15, 6, 21, 10,
+			23, 19, 12, 4, 26, 8,
+			16, 7, 27, 20, 13, 2,
+			41, 52, 31, 37, 47, 55,
+			30, 40, 51, 45, 33, 48,
+			44, 49, 39, 56, 34, 53,
+			46, 42, 50, 36, 29, 32]
 
-    # Encrypt and send N1 using server's public key
-    encrypted_message_n1 = encryptRSA(message_n1, server_public_key)
-    print(f'Encrypted message (using PUB B): {encrypted_message_n1}')
-    client_socket.send(str(encrypted_message_n1).encode())
+# Splitting
+left = key[0:28] # rkb for RoundKeys in binary
+right = key[28:56] # rk for RoundKeys in hexadecimal
 
-    print('(1) N1 sent . . .\n')
+rkb = []
+rk = []
+for i in range(0, 16):
+	# Shifting the bits by nth shifts by checking from shift table
+	left = shift_left(left, shift_table[i])
+	right = shift_left(right, shift_table[i])
 
-    # Receive and decrypt N2 using client's private key
-    encrypted_message_n2 = client_socket.recv(1024).decode()
-    if encrypted_message_n2:
-        decrypted_message_n2 = decryptRSA(int(encrypted_message_n2), private_key)
-        print(f'(2) N2 Decrypted message (using private key A): {decrypted_message_n2}')
+	# Combination of left and right string
+	combine_str = left + right
 
-        # Send the decrypted N2 message back to the server (clientB.py)
-        encrypted_message_n2 = encryptRSA(decrypted_message_n2, server_public_key)
-        print(f'Encrypted message (using PUB B): {encrypted_message_n2}')
-        client_socket.send(str(encrypted_message_n2).encode())
-        print('\n(3) N2 sent . . .\n')
+	# Compression of key from 56 to 48 bits
+	round_key = permute(combine_str, key_comp, 48)
 
-        session_key_chunks = []
-        print('(4) Receiving Session Key . . .')
-        for _ in range(8): 
-            encrypted_chunk = int(client_socket.recv(1024).decode())
-            decrypted_chunk = decryptRSA(encrypted_chunk, private_key)
-            session_key_chunks.append(decrypted_chunk)
+	rkb.append(round_key)
+	rk.append(bin2hex(round_key))
 
-            print(f'received\t: {encrypted_chunk}')
-            print(f'decrypted\t: {decrypted_chunk}\n')
+print("Encryption")
+cipher_text = bin2hex(encrypt(pt, rkb, rk))
+print("Cipher Text : ", cipher_text)
 
-        # Combine decrypted chunks to form the session key
-        session_key = ''.join(map(str, session_key_chunks))
-        print(f'(5) Combined Session Key: {session_key}\n')
-        
-        key = hex2bin(session_key)
-
-        # --parity bit drop table
-        keyp = [57, 49, 41, 33, 25, 17, 9,
-                1, 58, 50, 42, 34, 26, 18,
-                10, 2, 59, 51, 43, 35, 27,
-                19, 11, 3, 60, 52, 44, 36,
-                63, 55, 47, 39, 31, 23, 15,
-                7, 62, 54, 46, 38, 30, 22,
-                14, 6, 61, 53, 45, 37, 29,
-                21, 13, 5, 28, 20, 12, 4]
-
-        # getting 56 bit key from 64 bit using the parity bits
-        key = permute(key, keyp, 56)
-
-        # Number of bit shifts
-        shift_table = [1, 1, 2, 2,
-                    2, 2, 2, 2,
-                    1, 2, 2, 2,
-                    2, 2, 2, 1]
-
-        # Key- Compression Table : Compression of key from 56 bits to 48 bits
-        key_comp = [14, 17, 11, 24, 1, 5,
-                    3, 28, 15, 6, 21, 10,
-                    23, 19, 12, 4, 26, 8,
-                    16, 7, 27, 20, 13, 2,
-                    41, 52, 31, 37, 47, 55,
-                    30, 40, 51, 45, 33, 48,
-                    44, 49, 39, 56, 34, 53,
-                    46, 42, 50, 36, 29, 32]
-
-        # Splitting
-        left = key[0:28] # rkb for RoundKeys in binary
-        right = key[28:56] # rk for RoundKeys in hexadecimal
-
-        rkb = []
-        rk = []
-        for i in range(0, 16):
-            # Shifting the bits by nth shifts by checking from shift table
-            left = shift_left(left, shift_table[i])
-            right = shift_left(right, shift_table[i])
-
-            # Combination of left and right string
-            combine_str = left + right
-
-            # Compression of key from 56 to 48 bits
-            round_key = permute(combine_str, key_comp, 48)
-
-            rkb.append(round_key)
-            rk.append(bin2hex(round_key))
-
-        
-        print("(6) Encryption . . .")
-        cipher_text = bin2hex(encrypt(pt, rkb, rk))
-        print(f"Cipher Text : {cipher_text}\n")
-
-        print("(7) Decryption . . .")
-        # membalikkan urutan karena selama proses enkripsi itu terbalik
-        rkb_rev = rkb[::-1]
-        rk_rev = rk[::-1]
-        text = bin2hex(encrypt(cipher_text, rkb_rev, rk_rev))
-        print(f"Plain Text : {text}\n")
-
-    client_socket.close()
-
-if __name__ == "__main__":
-    main()
+print("Decryption")
+# membalikkan urutan karena selama proses enkripsi itu terbalik
+rkb_rev = rkb[::-1]
+rk_rev = rk[::-1]
+text = bin2hex(encrypt(cipher_text, rkb_rev, rk_rev))
+print("Plain Text : ", text)

@@ -36,7 +36,7 @@ def main():
     server_socket.bind(server_address)
     server_socket.listen(1)
 
-    print("Waiting for connection...\n")
+    print("Waiting for connection . . .\n")
     client_socket, client_address = server_socket.accept()
     print(f"Connection established with {client_address}\n")
 
@@ -66,7 +66,7 @@ def main():
 
     # Send encrypted N2 message back to clientA.py
     client_socket.send(str(encrypted_message_n2).encode())
-    print('(2) N2 sent ...\n')
+    print('(2) N2 sent . . .\n')
 
     # Receive and decrypt N2 using the server's private key
     encrypted_message_n2 = int(client_socket.recv(1024).decode())
@@ -74,8 +74,8 @@ def main():
     print(f'(3) N2 Decrypted message (using private key B): {decrypted_message_n2}\n')
 
     # Encrypt and send each 2-bit chunk to A.py
-    print('(4) Sending Session Key...')
-    session_key = '1234567890987654'
+    print('(4) Sending Session Key . . .')
+    session_key = '1234567890987612'
     
     session_key_chunks = [session_key[i:i+2] for i in range(0, len(session_key), 2)]
 
@@ -87,7 +87,7 @@ def main():
         client_socket.send(str(encrypted_chunk).encode())
         time.sleep(0.5)
     
-    print('(5) Session Key sent ...\n')
+    print('(5) Session Key sent . . .\n')
 
     client_socket.close()
     server_socket.close()
