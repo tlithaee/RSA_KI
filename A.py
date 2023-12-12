@@ -250,10 +250,8 @@ def encrypt(pt, rkb, rk):
 		# print("Round ", i + 1, " ", bin2hex(left),
 		# 	" ", bin2hex(right), " ", rk[i])
 
-	# Combination
 	combine = left + right
 
-	# Final permutation: final rearranging of bits to get cipher text
 	cipher_text = permute(combine, final_perm, 64)
 	return cipher_text
 
@@ -268,29 +266,24 @@ def main():
     print(f'Public key: {public_key}')
     print(f'Private key: {private_key}\n')
 
-    # Send public key to server
     client_socket.send(str(public_key).encode())
 
-    # Receive server's public key
     server_public_key = eval(client_socket.recv(1024).decode())
     print(f"Received server's public key: {server_public_key}\n")
 
     message_n1 = int(input("Enter N1 message to send:"))
 
-    # Encrypt and send N1 using server's public key
     encrypted_message_n1 = encryptRSA(message_n1, server_public_key)
     print(f'Encrypted message (using PUB B): {encrypted_message_n1}')
     client_socket.send(str(encrypted_message_n1).encode())
 
     print('(1) N1 sent . . .\n')
 
-    # Receive and decrypt N2 using client's private key
     encrypted_message_n2 = client_socket.recv(1024).decode()
     if encrypted_message_n2:
         decrypted_message_n2 = decryptRSA(int(encrypted_message_n2), private_key)
         print(f'(2) N2 Decrypted message (using private key A): {decrypted_message_n2}')
 
-        # Send the decrypted N2 message back to the server (clientB.py)
         encrypted_message_n2 = encryptRSA(decrypted_message_n2, server_public_key)
         print(f'Encrypted message (using PUB B): {encrypted_message_n2}')
         client_socket.send(str(encrypted_message_n2).encode())
@@ -306,7 +299,6 @@ def main():
             print(f'received\t: {encrypted_chunk}')
             print(f'decrypted\t: {decrypted_chunk}\n')
 
-        # Combine decrypted chunks to form the session key
         session_key = ''.join(map(str, session_key_chunks))
         print(f'(5) Combined Session Key: {session_key}\n')
         
@@ -352,7 +344,6 @@ def main():
             left = shift_left(left, shift_table[i])
             right = shift_left(right, shift_table[i])
 
-            # Combination of left and right string
             combine_str = left + right
 
             # Compression of key from 56 to 48 bits
@@ -367,7 +358,6 @@ def main():
         print(f"Cipher Text : {cipher_text}\n")
 
         print("(7) Decryption . . .")
-        # membalikkan urutan karena selama proses enkripsi itu terbalik
         rkb_rev = rkb[::-1]
         rk_rev = rk[::-1]
         text = bin2hex(encrypt(cipher_text, rkb_rev, rk_rev))
